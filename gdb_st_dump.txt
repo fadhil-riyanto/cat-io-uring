@@ -1,0 +1,26 @@
+$4 = {
+  st_dev = 2050,
+  st_ino = 6424636,
+  st_nlink = 1,
+  st_mode = 33188,
+  st_uid = 1000,
+  st_gid = 1000,
+  __pad0 = 0,
+  st_rdev = 0,
+  st_size = 5,
+  st_blksize = 4096,
+  st_blocks = 8,
+  st_atim = {
+    tv_sec = 1720498526,
+    tv_nsec = 591552448
+  },
+  st_mtim = {
+    tv_sec = 1720498532,
+    tv_nsec = 831552253
+  },
+  st_ctim = {
+    tv_sec = 1720498532,
+    tv_nsec = 831552253
+  },
+  __glibc_reserved = {0, 0, 0}
+}
