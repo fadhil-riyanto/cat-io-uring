@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -12,6 +13,13 @@
 
 struct runtime {
         int cur_op_fd;
+};
+
+/* define vectorized struct for operation readv, writev syscall */
+
+struct io_vector {
+        void *io_vector_base;
+        size_t io_vector_len;
 };
 
 static off_t file_get_size(struct runtime *runtime) 
@@ -44,8 +52,45 @@ static off_t file_get_size(struct runtime *runtime)
         return -1;
 }
 
-static int read_and_print(char *filename, struct runtime *runtime) {
+static int reader(struct io_vector *io_vectors, off_t *bytes_remaining)
+{
+        int cur_block = 0;
         
+        
+        // while (*bytes_remaining) {
+        //         printf("remaining byte %llu\n", 
+        //                         (unsigned long long)*bytes_remaining);
+
+        //         if (*bytes_remaining < BLOCK_SZ) 
+        //                 bytes_to_read = BLOCK_SZ;
+
+        //         bytes_remaining -= bytes_to_read;
+        // }
+        while (*bytes_remaining) {
+                off_t bytes_to_read = *bytes_remaining;
+
+                if (*bytes_remaining > BLOCK_SZ) 
+                        bytes_to_read = BLOCK_SZ;
+
+                void *buf;
+                if (posix_memalign(&buf, BLOCK_SZ, BLOCK_SZ)) {
+                        perror("memalign");
+                        return -1;
+                }
+
+                io_vectors[cur_block].io_vector_base = buf;
+                io_vectors[cur_block].io_vector_len = bytes_to_read;
+                printf("start block : %llu\n", (unsigned long long)bytes_to_read);
+                cur_block++;
+
+                *bytes_remaining -= bytes_to_read;
+        }
+
+        return 0; /* debug here */
+}
+
+static int read_and_print(char *filename, struct runtime *runtime) {
+        struct io_vector *io_vectors;
         runtime->cur_op_fd = open(filename, O_RDONLY);
         if (runtime->cur_op_fd < 0) {
                 perror("open");
@@ -53,12 +98,16 @@ static int read_and_print(char *filename, struct runtime *runtime) {
         } 
         off_t file_size = file_get_size(runtime);
         off_t bytes_remaining = file_size;
+        printf("filesize from st.size | ioctl res: %llu\n", (unsigned long long)file_size);
 
         int blocks = (int) file_size / BLOCK_SZ; // cast
         if (file_size % BLOCK_SZ) 
                 blocks++;
 
         printf("block generated %d\n", blocks);
+        
+        io_vectors = (struct io_vector*)malloc(sizeof(struct io_vector) * blocks);
+        reader(io_vectors, &bytes_remaining);
 
         return 0;
 }

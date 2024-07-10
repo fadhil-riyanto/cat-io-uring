@@ -1,0 +1,29 @@
+// at 10
+$3 = {
+  io_vector_base = 0x55555555c000,
+  io_vector_len = 0x1000
+}
+
+// at 8520
+// block 0
+$2 = {
+  io_vector_base = 0x55555555a000,
+  io_vector_len = 0x1000
+}
+
+// final block
+gef➤  p/d io_vectors[0]
+$3 = {
+  io_vector_base = 93824992256000,
+  io_vector_len = 4096
+}
+gef➤  p/d io_vectors[1]
+$4 = {
+  io_vector_base = 93824992264192,
+  io_vector_len = 4096
+}
+gef➤  p/d io_vectors[2]
+$5 = {
+  io_vector_base = 93824992272384,
+  io_vector_len = 328
+}
