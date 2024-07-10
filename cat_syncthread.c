@@ -121,7 +121,7 @@ static int read_and_print(char *filename, struct runtime *runtime) {
                 write(1, io_vectors[i].iov_base, io_vectors[i].iov_len);
         }
         write(1, "\n\0", 2);
-
+ 
         return 0;
 }
 
