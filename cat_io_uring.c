@@ -3,12 +3,46 @@
 #include <stdio.h>
 #include <string.h>
 #include "cat_io_uring.h"
-#include "io_uring_syscall.c"
+#include "syscall.c"
 
+#define QUEUE_DEPTH 1
 
+/*
+        refence for submission queue entry, here https://kernel.dk/io_uring.pdf
+
+        struct io_uring_sqe {
+                __u8 opcode;                  // opcode field that describes the operation code, example: IORING_OP_READV
+                __u8 flags;                   // flags contains modifier flags
+                __u16 ioprio;                 // ioprio is the priority of this request, see ioprio_set(2)
+                __s32 fd;                     // fd is the file descriptor associated with the request
+                __u64 off;                    // off holds the offset at which the operation should take place
+                __u64 addr;                   // addr contains the address at which the operation should perform IO, if the op-code describes an operation that transfers data. If the
+                                              // operation is a vectored read/write of some sort, this will be a pointer 
+                                              // to an struct iovec array, as used by preadv(2), for
+                                              // example. For a non-vectored IO transfer,
+                                              // addr must contain the address directly
+                __u32 len;                    // This carries into len, which is either a byte count for a non-vectored IO 
+                                              // transfer, or a number of vectors described by
+                                              // addr for a vectored IO transfer
+                union {
+                        __kernel_rwf_t rw_flags;        // Next follows a union of flags that are specific to the op-code
+                        __u32 fsync_flags;
+                        __u16 poll_events;
+                        __u32 sync_range_flags;
+                        __u32 msg_flags;
+                };
+                __u64 user_data;                        // untouched by the kernel
+                union {
+                        __u16 buf_index;                // buf_index will be described in the advanced use cases section
+                        __u64 __pad2[3];       // unused, for future and padding in 64
+                };
+        };
+*/
 
 static int init_io_uring(submitter_t *submitter)
 {
+        short ret;
+
         /* copy the reference from malloc() */
         struct app_io_uring_sqe_ring sqe_ring = submitter->app_io_uring_sqe_ring;
         struct app_io_uring_cqe_ring cqu_ring = submitter->app_io_uring_cqe_ring;
@@ -22,16 +56,27 @@ static int init_io_uring(submitter_t *submitter)
                         __u32 sq_thread_cpu;
                         __u32 sq_thread_idle;
                         __u32 resv[5];
-                        struct io_sqring_offsets sq_off;
-                        struct io_cqring_offsets cq_off;
+                        struct io_sqring_offsets sq_off; // i dont really trust this: https://github.com/torvalds/linux/blob/34afb82a3c67f869267a26f593b6f8fc6bf35905/include/uapi/linux/io_uring.h#L462
+                        struct io_cqring_offsets cq_off; // same: https://github.com/torvalds/linux/blob/34afb82a3c67f869267a26f593b6f8fc6bf35905/include/uapi/linux/io_uring.h#L481
                 };
         */
         struct io_uring_params io_params;
         void *sqe_ptr, *cqe_ptr;
 
-        
+        memset(&io_params, 0, sizeof(struct io_uring_params));
+
+        ret = io_uring_setup(QUEUE_DEPTH, &io_params);
+        if (ret < 0) {
+                perror("sys_io_uring_setup");
+        }
+
+        printf("io_uring fd: %d", ret);
+
+        // calculate sqe, cqe from buildin struct
+        int sqe_ring_size = io_params.sq_off.array
 
 
+        return 0;
 }
 
 static int __main(char *filename) 
@@ -45,7 +90,7 @@ static int __main(char *filename)
 
         memset(submit, 0, sizeof(struct submitter));
 
-
+        init_io_uring(submit);
         return 0;
 }
 
