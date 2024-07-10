@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/uio.h>
 #include <linux/fs.h>
 
 #define BLOCK_SZ    4096
@@ -52,7 +53,7 @@ static off_t file_get_size(struct runtime *runtime)
         return -1;
 }
 
-static int reader(struct io_vector *io_vectors, off_t *bytes_remaining)
+static int reader(struct iovec *io_vectors, off_t *bytes_remaining)
 {
         int cur_block = 0;
         
@@ -78,8 +79,8 @@ static int reader(struct io_vector *io_vectors, off_t *bytes_remaining)
                         return -1;
                 }
 
-                io_vectors[cur_block].io_vector_base = buf;
-                io_vectors[cur_block].io_vector_len = bytes_to_read;
+                io_vectors[cur_block].iov_base = buf;
+                io_vectors[cur_block].iov_len = bytes_to_read;
                 printf("start block : %llu\n", (unsigned long long)bytes_to_read);
                 cur_block++;
 
@@ -90,7 +91,9 @@ static int reader(struct io_vector *io_vectors, off_t *bytes_remaining)
 }
 
 static int read_and_print(char *filename, struct runtime *runtime) {
-        struct io_vector *io_vectors;
+        short ret = 0;
+
+        struct iovec *io_vectors;
         runtime->cur_op_fd = open(filename, O_RDONLY);
         if (runtime->cur_op_fd < 0) {
                 perror("open");
@@ -106,8 +109,18 @@ static int read_and_print(char *filename, struct runtime *runtime) {
 
         printf("block generated %d\n", blocks);
         
-        io_vectors = (struct io_vector*)malloc(sizeof(struct io_vector) * blocks);
-        reader(io_vectors, &bytes_remaining);
+        io_vectors = (struct iovec*)malloc(sizeof(struct io_vector) * blocks);
+        ret = reader(io_vectors, &bytes_remaining);
+
+        if (ret != 0) {
+                perror("error");
+                return -1;
+        }
+        readv(runtime->cur_op_fd, io_vectors, blocks);
+        for (int i = 0; i < blocks; i++) {
+                write(1, io_vectors[i].iov_base, io_vectors[i].iov_len);
+        }
+        write(1, "\n\0", 2);
 
         return 0;
 }
