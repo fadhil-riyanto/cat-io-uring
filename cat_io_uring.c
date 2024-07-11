@@ -56,8 +56,8 @@ static int init_io_uring(submitter_t *submitter)
                         __u32 sq_thread_cpu;
                         __u32 sq_thread_idle;
                         __u32 resv[5];
-                        struct io_sqring_offsets sq_off; // i dont really trust this: https://github.com/torvalds/linux/blob/34afb82a3c67f869267a26f593b6f8fc6bf35905/include/uapi/linux/io_uring.h#L462
-                        struct io_cqring_offsets cq_off; // same: https://github.com/torvalds/linux/blob/34afb82a3c67f869267a26f593b6f8fc6bf35905/include/uapi/linux/io_uring.h#L481
+                        struct io_sqring_offsets sq_off; // https://gist.github.com/fadhil-riyanto/35083851fea9b044f28a887dd8801653#file-io_uring-h
+                        struct io_cqring_offsets cq_off; // https://github.com/torvalds/linux/blob/34afb82a3c67f869267a26f593b6f8fc6bf35905/include/uapi/linux/io_uring.h#L481
                 };
         */
         struct io_uring_params io_params;
@@ -73,7 +73,7 @@ static int init_io_uring(submitter_t *submitter)
         printf("io_uring fd: %d", ret);
 
         // calculate sqe, cqe from buildin struct
-        int sqe_ring_size = io_params.sq_off.array
+        // int sqe_ring_size = io_params.sq_off.array
 
 
         return 0;
