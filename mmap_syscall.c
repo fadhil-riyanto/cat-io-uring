@@ -37,14 +37,29 @@ int main()
     /* use gdb, dump set breakpoint to line 42, dump variable pagesz
         gef➤  p/d pagesz
         $2 = 4096
+
+        pagesz is default page size defined by memory
     */
     int pagesz = getpagesize();
     int op_open_fd = open("lg4096.txt", O_RDONLY);
     f_sz = file_size(op_open_fd);
 
     char* charptr;
-    charptr = mmap(NULL, f_sz - 1000, PROT_READ, MAP_SHARED | MAP_POPULATE, 
-                    op_open_fd, 0);
+
+    /* how mmap(2) works
+    *   null : start address by kernel
+    * len: how many memory need?
+    * fd: which fd we shoud map?
+    * offset: byte(s) offset in file, example
+    *
+    * a contain 1 bytes, so 4098 a contain  4098, we need to print
+    * bc, which located at bytes 4097 to 4098, len is 2
+    * then, set offset to 4096, it will read 4097, 4098 and copy the buf
+    * to the charptr
+    *
+    */
+    charptr = mmap(NULL, f_sz - 4096, PROT_READ, MAP_SHARED | MAP_POPULATE, 
+                    op_open_fd, 4096);
     // offsetset(op_open_fd);
     
 
