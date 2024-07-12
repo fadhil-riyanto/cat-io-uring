@@ -1,11 +1,12 @@
+
 #include <linux/io_uring.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "cat_io_uring.h"
-#include "syscall.c"
+#include "syscall.h"
 
-#define QUEUE_DEPTH 1
+#define QUEUE_DEPTH 1 /* must be power of 2 */
 
 /*
         refence for submission queue entry, here https://kernel.dk/io_uring.pdf
@@ -65,6 +66,7 @@ static int init_io_uring(submitter_t *submitter)
 
         memset(&io_params, 0, sizeof(struct io_uring_params));
 
+        /* if this syscall are success, sq_off and cq_off will be returned */
         ret = io_uring_setup(QUEUE_DEPTH, &io_params);
         if (ret < 0) {
                 perror("sys_io_uring_setup");
@@ -73,8 +75,27 @@ static int init_io_uring(submitter_t *submitter)
         printf("io_uring fd: %d", ret);
 
         // calculate sqe, cqe from buildin struct
-        // int sqe_ring_size = io_params.sq_off.array
 
+        /* important note
+        *       sq_entries : filled by kernel, used to define how many sqe entry this ring support
+        *       cq_entries : tell how big CQ ring is
+        */
+        int sqe_ring_size = io_params.sq_off.array + io_params.sq_entries * sizeof(unsigned);
+        int cqe_ring_size = io_params.cq_off.cqes + io_params.cq_entries * sizeof(struct io_uring_cqe);
+        
+
+        // assert(io_params.features & IORING_FEAT_SINGLE_MMAP);
+        // printf("done");
+
+        if (io_params.features & IORING_FEAT_SINGLE_MMAP) {
+                printf("IORING_FEAT_SINGLE_MMAP is set\n");
+                if (cqe_ring_size > sqe_ring_size) 
+                        sqe_ring_size = cqe_ring_size;
+
+                cqe_ring_size = sqe_ring_size;
+        }
+
+        /* allocate memory on sqe */
 
         return 0;
 }
