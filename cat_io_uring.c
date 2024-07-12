@@ -68,8 +68,29 @@ static void app_setup_sq_ring(int iofd, struct io_uring_params *p,
         sqring->flags = ptr + p->sq_off.flags;
         sqring->dropped = ptr + p->sq_off.dropped;
         sqring->array = ptr + p->sq_off.array;
-
 }
+
+// now map cqe ring, map cqe is smillar with sqe ring
+static void app_setup_cq_ring(int iofd, struct io_uring_params *p, 
+                                                struct app_io_uring_cqe_ring *cqring,
+                                                int cqe_ring_size)
+{
+        void *ptr;
+        ptr = mmap(NULL, cqe_ring_size, PROT_READ | PROT_WRITE,
+                 MAP_SHARED | MAP_POPULATE, iofd, IORING_OFF_CQ_RING);
+
+        // by adding ptr with special number, we can accees the memory.
+        cqring->head = ptr + p->cq_off.head;
+        cqring->tail = ptr + p->cq_off.tail;
+        cqring->ring_mask = ptr + p->cq_off.ring_mask;
+        cqring->ring_entries = ptr + p->cq_off.ring_entries;
+        cqring->overflow = ptr + p->cq_off.overflow;
+        cqring->cqes = ptr + p->cq_off.cqes;
+        cqring->flags = ptr + p->cq_off.flags;
+    
+        
+}
+
 
 static int init_io_uring(submitter_t *submitter)
 {
@@ -78,7 +99,7 @@ static int init_io_uring(submitter_t *submitter)
 
         /* copy the reference from malloc() */
         struct app_io_uring_sqe_ring *sqe_ring = &submitter->app_io_uring_sqe_ring;
-        struct app_io_uring_cqe_ring *cqu_ring = &submitter->app_io_uring_cqe_ring;
+        struct app_io_uring_cqe_ring *cqe_ring = &submitter->app_io_uring_cqe_ring;
 
         /*
                 reference:
@@ -131,8 +152,8 @@ static int init_io_uring(submitter_t *submitter)
 
         /* map memory on SQE, read from io_uring_ */
         app_setup_sq_ring(iofd, &io_params, sqe_ring, sqe_ring_size);
-
-
+        app_setup_cq_ring(iofd, &io_params, cqe_ring, sqe_ring_size)
+;
         return 0;
 }
 
