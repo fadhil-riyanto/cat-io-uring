@@ -49,18 +49,25 @@ static void __debug_sqering(void* cur_offset, struct io_uring_params *p)
         
 }
 
-static struct app_io_uring_sqe_ring app_setup_sq_ring(int iofd, struct io_uring_params *p, 
+static void app_setup_sq_ring(int iofd, struct io_uring_params *p, 
+                                                struct app_io_uring_sqe_ring *sqring,
                                                 int sqe_ring_size)
 {
-        struct app_io_uring_sqe_ring sqring;
         void *ptr;
 
         ptr = mmap(NULL, sqe_ring_size, PROT_READ | PROT_WRITE, 
                         MAP_SHARED | MAP_POPULATE, iofd, IORING_OFF_SQ_RING);
 
         /* gdb debug PTR */
-        __debug_sqering(ptr, p);
-        return sqring;
+        // __debug_sqering(ptr, p);
+
+        sqring->head = ptr + p->sq_off.head;
+        sqring->tail = ptr + p->sq_off.tail;
+        sqring->ring_mask = ptr + p->sq_off.ring_mask;
+        sqring->ring_entries = ptr + p->sq_off.ring_entries;
+        sqring->flags = ptr + p->sq_off.flags;
+        sqring->dropped = ptr + p->sq_off.dropped;
+        sqring->array = ptr + p->sq_off.array;
 
 }
 
@@ -70,8 +77,8 @@ static int init_io_uring(submitter_t *submitter)
         int iofd;
 
         /* copy the reference from malloc() */
-        struct app_io_uring_sqe_ring sqe_ring = submitter->app_io_uring_sqe_ring;
-        struct app_io_uring_cqe_ring cqu_ring = submitter->app_io_uring_cqe_ring;
+        struct app_io_uring_sqe_ring *sqe_ring = &submitter->app_io_uring_sqe_ring;
+        struct app_io_uring_cqe_ring *cqu_ring = &submitter->app_io_uring_cqe_ring;
 
         /*
                 reference:
@@ -123,7 +130,7 @@ static int init_io_uring(submitter_t *submitter)
         }
 
         /* map memory on SQE, read from io_uring_ */
-        app_setup_sq_ring(iofd, &io_params, sqe_ring_size);
+        app_setup_sq_ring(iofd, &io_params, sqe_ring, sqe_ring_size);
 
 
         return 0;
