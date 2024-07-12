@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
 #include "cat_io_uring.h"
 #include "syscall.h"
 
@@ -39,10 +40,34 @@
                 };
         };
 */
+static void __debug_sqering(void* cur_offset, struct io_uring_params *p) 
+{       
+        // same as gdb
+        printf("head %p\n", cur_offset + p->sq_off.head);
+        printf("tail %p\n", cur_offset + p->sq_off.tail);
+        printf("ring_entries %p\n", cur_offset + p->sq_off.ring_entries);
+        
+}
+
+static struct app_io_uring_sqe_ring app_setup_sq_ring(int iofd, struct io_uring_params *p, 
+                                                int sqe_ring_size)
+{
+        struct app_io_uring_sqe_ring sqring;
+        void *ptr;
+
+        ptr = mmap(NULL, sqe_ring_size, PROT_READ | PROT_WRITE, 
+                        MAP_SHARED | MAP_POPULATE, iofd, IORING_OFF_SQ_RING);
+
+        /* gdb debug PTR */
+        __debug_sqering(ptr, p);
+        return sqring;
+
+}
 
 static int init_io_uring(submitter_t *submitter)
 {
         short ret;
+        int iofd;
 
         /* copy the reference from malloc() */
         struct app_io_uring_sqe_ring sqe_ring = submitter->app_io_uring_sqe_ring;
@@ -70,7 +95,9 @@ static int init_io_uring(submitter_t *submitter)
         ret = io_uring_setup(QUEUE_DEPTH, &io_params);
         if (ret < 0) {
                 perror("sys_io_uring_setup");
+                return -1;
         }
+        iofd = (int)ret;
 
         printf("io_uring fd: %d", ret);
 
@@ -95,7 +122,9 @@ static int init_io_uring(submitter_t *submitter)
                 cqe_ring_size = sqe_ring_size;
         }
 
-        /* allocate memory on sqe */
+        /* map memory on SQE, read from io_uring_ */
+        app_setup_sq_ring(iofd, &io_params, sqe_ring_size);
+
 
         return 0;
 }
