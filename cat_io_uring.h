@@ -20,8 +20,6 @@ struct app_io_uring_sqe_ring {
 	unsigned int *flags;
 	unsigned int *dropped;
 	unsigned int *array;
-	unsigned int *resv1;
-	unsigned long user_addr;
 };
 
 
