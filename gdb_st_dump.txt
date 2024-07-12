@@ -81,3 +81,20 @@ $1 = {
   },
   __glibc_reserved = {0x0, 0x0, 0x0}
 }
+
+// access shared memory, just selfnote
+gef➤  p ptr
+$1 = (void *) 0x7ffff7fc2000
+gef➤  p *ptr
+Attempt to dereference a generic pointer.
+gef➤  p ptr + p->sq_off.head
+$2 = (void *) 0x7ffff7fc2000
+gef➤  p/d ptr + p->sq_off.head
+$3 = 140737353883648
+gef➤  p/d ptr + p->sq_off
+Can't do that binary op on that type
+gef➤  p/d ptr + p->sq_off.tail
+$4 = 140737353883652
+gef➤  p/d ptr + p->sq_off.ring_entries
+$5 = 140737353883672
+gef➤  

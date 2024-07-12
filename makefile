@@ -1,5 +1,8 @@
 CFLAGS = -g -O0
 
+clean:
+	rm *.o
+
 cat_sync: cat_syncthread.c
 	gcc $? -o $@ ${CFLAGS}
 
