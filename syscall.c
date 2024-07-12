@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <linux/io_uring.h>
 #include <linux/types.h>
+#include "syscall.h"
 
 /* ref: https://stackoverflow.com/questions/7218220/c-u32-type-header */
 
