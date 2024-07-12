@@ -3,9 +3,11 @@ CFLAGS = -g -O0
 cat_sync: cat_syncthread.c
 	gcc $? -o $@ ${CFLAGS}
 
-cat_io_uring: cat_io_uring.c cat_io_uring.h syscall.c
-	gcc $? -o $@ ${CFLAGS}
+cat_io_uring.c syscall.c:
+	gcc $@ -o ${@}.o -c
 
+cat_io_uring: cat_io_uring.o syscall.o
+	gcc $? -o $@ ${CFLAGS}
 
 block_memory_alg: block_memory.c
 	gcc $? -o $@ ${CFLAGS}
