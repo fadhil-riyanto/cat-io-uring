@@ -1,4 +1,4 @@
-CFLAGS = -ggdb3 -O0
+CFLAGS = -g -O0
 
 cat_sync: cat_syncthread.c
 	gcc $? -o $@ ${CFLAGS}
