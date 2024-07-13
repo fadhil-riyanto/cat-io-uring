@@ -2,3 +2,4 @@ cat_sync
 p
 cat_io_uring
 *.o
+vgcore.*
