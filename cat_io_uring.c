@@ -1,4 +1,5 @@
 
+#include <bits/types/struct_iovec.h>
 #include <fcntl.h>
 #include <linux/io_uring.h>
 #include <stdlib.h>
@@ -9,6 +10,8 @@
 #include <sys/stat.h>
 #include "cat_io_uring.h"
 #include "syscall.h"
+
+#define MEMBLK_SIZE 1024
 
 #define QUEUE_DEPTH 1 /* must be power of 2 */
 
@@ -174,14 +177,57 @@ static off_t get_file_size(int fd)
 
 static int submit_sq(char *filename, submitter_t *submitter) 
 {
-        int fd;
+        void *ptr;
+        short ret;
+        int fd, blocks;
+        struct iovec *iovecs;
+
         fd = open(filename, O_RDONLY);
         if (fd < 0) {
                 perror("open()");
                 return -1;
         }
 
-        get_file_size(fd);
+        off_t filesz = get_file_size(fd);
+        if (filesz < 0)
+                return -1;
+
+        off_t remaining_bytes = filesz;
+        blocks = (int) filesz / MEMBLK_SIZE; // rounding down
+        if (filesz % MEMBLK_SIZE)
+                blocks++;
+
+        iovecs = (struct iovec*)malloc(sizeof(struct iovec) * blocks);
+
+        if (!iovecs) {
+                perror("malloc iovecs");
+                return -1;
+        }
+
+        int i = 0;
+        while (!(remaining_bytes == 0)) {
+                printf("doing %llu\n", (unsigned long long)100);
+                off_t need_read = 0;
+                void *buf;
+                if (posix_memalign(&buf, MEMBLK_SIZE, MEMBLK_SIZE)) {
+                        perror("posix set memory aligned error");
+                        return -1;
+                }
+
+                if (remaining_bytes > MEMBLK_SIZE) 
+                        need_read = MEMBLK_SIZE;
+                else
+                        need_read = remaining_bytes;
+                
+                iovecs[i].iov_base = buf;
+                iovecs[i].iov_len = need_read;
+
+                remaining_bytes = remaining_bytes - need_read;
+                i++;
+        }
+
+        
+        
         return 0;
 }
 
@@ -208,5 +254,6 @@ int main(int argc, char **argv)
                 return 1;
         }
 
-        return __main(argv[1]);
+        __main(argv[1]);
+        return 3;
 }
