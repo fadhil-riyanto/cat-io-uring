@@ -1,9 +1,12 @@
 
+#include <fcntl.h>
 #include <linux/io_uring.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "cat_io_uring.h"
 #include "syscall.h"
 
@@ -152,8 +155,33 @@ static int init_io_uring(submitter_t *submitter)
 
         /* map memory on SQE, read from io_uring_ */
         app_setup_sq_ring(iofd, &io_params, sqe_ring, sqe_ring_size);
-        app_setup_cq_ring(iofd, &io_params, cqe_ring, sqe_ring_size)
-;
+        app_setup_cq_ring(iofd, &io_params, cqe_ring, sqe_ring_size);
+        return 0;
+}
+
+static off_t get_file_size(int fd) 
+{
+        struct stat st;
+        short ret;
+
+        ret = fstat(fd, &st);
+        if (ret < 0) {
+                perror("fstat");
+                return -1;
+        }
+        return st.st_size;
+}
+
+static int submit_sq(char *filename, submitter_t *submitter) 
+{
+        int fd;
+        fd = open(filename, O_RDONLY);
+        if (fd < 0) {
+                perror("open()");
+                return -1;
+        }
+
+        get_file_size(fd);
         return 0;
 }
 
@@ -169,6 +197,7 @@ static int __main(char *filename)
         memset(submit, 0, sizeof(struct submitter));
 
         init_io_uring(submit);
+        submit_sq(filename, submit);
         return 0;
 }
 
