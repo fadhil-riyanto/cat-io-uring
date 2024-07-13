@@ -1,4 +1,5 @@
 CFLAGS = -g -O0
+CXXFLAGS = -Wall -g
 
 clean:
 	rm *.o
