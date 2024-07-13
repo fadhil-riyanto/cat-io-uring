@@ -98,3 +98,16 @@ $4 = 140737353883652
 gef➤  p/d ptr + p->sq_off.ring_entries
 $5 = 140737353883672
 gef➤  
+
+
+
+// sqe_ring dump look like example
+$4 = {
+  head = 0x7ffff7fc2000,
+  tail = 0x7ffff7fc2004,
+  ring_mask = 0x7ffff7fc2010,
+  ring_entries = 0x7ffff7fc2018,
+  flags = 0x7ffff7fc2024,
+  dropped = 0x7ffff7fc2020,
+  array = 0x7ffff7fc2080
+}
