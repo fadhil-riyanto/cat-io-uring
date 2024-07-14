@@ -119,7 +119,9 @@ static void __init_sqe_ring(submitter_t *submitter, struct io_uring_params *p)
         submitter->sqe_ring = mmap(NULL, p->sq_entries * sizeof(struct io_uring_sqe), 
                                         PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, 
                                         submitter->ring_fd, IORING_OFF_SQES);
-        if (submitter->sqe_ring == MAP_FAILED) {
+        
+        /* BASED on https://pdos.csail.mit.edu/6.828/2019/labs/mmap.html */
+        if ((unsigned long)submitter->sqe_ring == 0xffffffffffffffff) {
                 perror("mmap() on io_uring_sqes");
         }
 }
