@@ -25,7 +25,8 @@ struct cleanup_addr cleanup_addr;
 static void cleanup()
 {
         for(int i = 0; i < cleanup_addr.iovecs_size; i++)
-                free(cleanup_addr.iovecs[i]->iov_base);
+                // free(cleanup_addr.iovecs[i]->iov_base);
+                free((*cleanup_addr.iovecs + i)->iov_base);
         free(cleanup_addr.iovec);
 }
 
