@@ -8,6 +8,8 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/uio.h>
+#include <unistd.h>
 #include "cat_io_uring.h"
 #include "syscall.h"
 
@@ -175,6 +177,15 @@ static off_t get_file_size(int fd)
         return st.st_size;
 }
 
+static void __direct_write_test(int fd, struct iovec *iovecs, int blksize)
+{
+        
+        readv(fd, iovecs, blksize);
+
+        for(int i = 0; i < blksize; i++) 
+                write(1, iovecs[i].iov_base, iovecs[i].iov_len);
+}
+
 static int submit_sq(char *filename, submitter_t *submitter) 
 {
         void *ptr;
@@ -197,7 +208,7 @@ static int submit_sq(char *filename, submitter_t *submitter)
         if (filesz % MEMBLK_SIZE)
                 blocks++;
 
-        iovecs = (struct iovec*)malloc(sizeof(struct iovec) * blocks);
+        iovecs = malloc(sizeof(struct iovec) * blocks);
 
         if (!iovecs) {
                 perror("malloc iovecs");
@@ -206,7 +217,7 @@ static int submit_sq(char *filename, submitter_t *submitter)
 
         int i = 0;
         while (!(remaining_bytes == 0)) {
-                printf("doing %llu\n", (unsigned long long)100);
+                
                 off_t need_read = 0;
                 void *buf;
                 if (posix_memalign(&buf, MEMBLK_SIZE, MEMBLK_SIZE)) {
@@ -221,12 +232,13 @@ static int submit_sq(char *filename, submitter_t *submitter)
                 
                 iovecs[i].iov_base = buf;
                 iovecs[i].iov_len = need_read;
+                printf("block %llu\n", (unsigned long long)need_read);
 
                 remaining_bytes = remaining_bytes - need_read;
                 i++;
         }
 
-        
+        __direct_write_test(fd, iovecs, blocks);
         
         return 0;
 }
