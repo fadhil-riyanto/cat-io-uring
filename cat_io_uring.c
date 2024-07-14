@@ -280,6 +280,11 @@ static int submit_sq(char *filename, submitter_t *submitter)
         cleanup_addr.iovec = iovecs;
         cleanup_addr.iovecs_size = blocks;
 
+        /* start packing the addr */
+        struct iovec_prop *iv_prop = malloc((sizeof(struct iovec) * blocks) + sizeof(int));
+        iv_prop->iovecs = iovecs;
+        iv_prop->iovecs_size = blocks;
+
         next_tail = tail = *sring->tail;
         next_tail++;
         read_barrier();
@@ -296,7 +301,7 @@ static int submit_sq(char *filename, submitter_t *submitter)
         sqe->addr = (unsigned long) iovecs;
         sqe->len = blocks;
         sqe->off = 0;
-        sqe->user_data = (unsigned long) iovecs;
+        sqe->user_data = (unsigned long) iv_prop;
 
         sring->array[index] = index;
         tail = next_tail; /* increment current insertion */
@@ -319,6 +324,7 @@ static int submit_sq(char *filename, submitter_t *submitter)
 static int read_cq(submitter_t *submitter)
 {
         struct iovec *iovecs;
+        struct iovec_prop *iovec_prop;
         struct app_io_uring_cqe_ring *cring = &submitter->app_io_uring_cqe_ring;
         struct io_uring_cqe *cqe;
         unsigned head, reaped= 0;
@@ -335,9 +341,9 @@ static int read_cq(submitter_t *submitter)
                 /* get entry */
                 int index = head & *submitter->app_io_uring_cqe_ring.ring_mask;
                 cqe = (struct io_uring_cqe*)&cring->cqes[index];
-                iovecs = (struct iovec*) cqe->user_data;
-                
+                iovec_prop = (struct iovec_prop*) cqe->user_data;
 
+                head++;
         } while(1);
         return 0;
 }

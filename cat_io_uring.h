@@ -59,4 +59,14 @@ struct cleanup_addr {
 	int iovecs_size;
 };
 
+/* sorry I forgot about abstraction layer
+ iovecs loses its size while entering kernel, so in the cq
+ we dont know what size is
+*/
+
+struct iovec_prop {
+	struct iovec *iovecs;
+	int iovecs_size;
+};
+
 #endif
