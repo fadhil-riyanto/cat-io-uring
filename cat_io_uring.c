@@ -16,6 +16,14 @@
 #define MEMBLK_SIZE 1024
 
 #define QUEUE_DEPTH 1 /* must be power of 2 */
+struct cleanup_addr cleanup_addr;
+
+static void cleanup()
+{
+        for(int i = 0; i < cleanup_addr.iovecs_size; i++)
+                free(cleanup_addr.iovecs[i]->iov_base);
+        free(cleanup_addr.iovec);
+}
 
 /*
         refence for submission queue entry, here https://kernel.dk/io_uring.pdf
@@ -240,12 +248,14 @@ static int submit_sq(char *filename, submitter_t *submitter)
 
         __direct_write_test(fd, iovecs, blocks);
 
-        for(int i = 0; i < blocks; i++) 
-                free(iovecs[i].iov_base);
-
-        free(iovecs);
+        cleanup_addr.iovecs = &iovecs;
+        cleanup_addr.iovec = iovecs;
+        cleanup_addr.iovecs_size = blocks;
+        
         return 0;
 }
+
+
 
 static int __main(char *filename) 
 {
@@ -261,7 +271,9 @@ static int __main(char *filename)
         // init_io_uring(submit);
         submit_sq(filename, submit);
 
+        cleanup();
         free(submit);
+        
         return 0;
 }
 

@@ -50,4 +50,13 @@ typedef struct submitter {
 
 } submitter_t;
 
+struct cleanup_addr {
+	/* cleaning its initializer
+	* cleaning the child buf
+	*/
+	struct iovec **iovecs; // iovecs arr
+	struct iovec *iovec; // iovecs head addr
+	int iovecs_size;
+};
+
 #endif
