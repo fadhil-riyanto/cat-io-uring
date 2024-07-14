@@ -161,6 +161,7 @@ static int init_io_uring(submitter_t *submitter)
                 return -1;
         }
         iofd = (int)ret;
+        submitter->ring_fd = ret;
 
         printf("io_uring fd: %d", ret);
 
