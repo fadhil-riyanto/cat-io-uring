@@ -316,6 +316,31 @@ static int submit_sq(char *filename, submitter_t *submitter)
         return 0;
 }
 
+static int read_cq(submitter_t *submitter)
+{
+        struct iovec *iovecs;
+        struct app_io_uring_cqe_ring *cring = &submitter->app_io_uring_cqe_ring;
+        struct io_uring_cqe *cqe;
+        unsigned head, reaped= 0;
+
+        head = *cring->head;
+
+        do {
+                read_barrier();
+                
+                /* if head equal with tail, no data */
+                if (head == *cring->tail)
+                        break;
+                
+                /* get entry */
+                int index = head & *submitter->app_io_uring_cqe_ring.ring_mask;
+                cqe = (struct io_uring_cqe*)&cring->cqes[index];
+                iovecs = (struct iovec*) cqe->user_data;
+                
+
+        } while(1);
+        return 0;
+}
 
 
 static int __main(char *filename) 
@@ -331,6 +356,7 @@ static int __main(char *filename)
 
         init_io_uring(submit);
         submit_sq(filename, submit);
+        read_cq(submit);
 
         cleanup();
         free(submit);
