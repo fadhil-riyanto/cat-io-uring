@@ -111,6 +111,19 @@ static void app_setup_cq_ring(int iofd, struct io_uring_params *p,
         
 }
 
+static void __init_sqe_ring(submitter_t *submitter, struct io_uring_params *p)
+{
+        
+        /* https://github.com/fadhil-riyanto/linux/blob/3db27e1fdd80c0305dbd0b778ec5d5a12ae187b7/include/uapi/linux/io_uring.h#L458 */
+        
+        submitter->sqe_ring = mmap(NULL, p->sq_entries * sizeof(struct io_uring_sqe), 
+                                        PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, 
+                                        submitter->ring_fd, IORING_OFF_SQES);
+        if (submitter->sqe_ring == MAP_FAILED) {
+                perror("mmap() on io_uring_sqes");
+        }
+}
+
 
 static int init_io_uring(submitter_t *submitter)
 {
@@ -173,6 +186,7 @@ static int init_io_uring(submitter_t *submitter)
         /* map memory on SQE, read from io_uring_ */
         app_setup_sq_ring(iofd, &io_params, sqe_ring, sqe_ring_size);
         app_setup_cq_ring(iofd, &io_params, cqe_ring, sqe_ring_size);
+        __init_sqe_ring(submitter, &io_params);
         return 0;
 }
 
