@@ -239,7 +239,11 @@ static int submit_sq(char *filename, submitter_t *submitter)
         }
 
         __direct_write_test(fd, iovecs, blocks);
-        
+
+        for(int i = 0; i < blocks; i++) 
+                free(iovecs[i].iov_base);
+
+        free(iovecs);
         return 0;
 }
 
@@ -256,6 +260,8 @@ static int __main(char *filename)
 
         // init_io_uring(submit);
         submit_sq(filename, submit);
+
+        free(submit);
         return 0;
 }
 
