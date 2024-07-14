@@ -10,6 +10,7 @@
 #include <linux/io_uring.h>
 #include <linux/types.h>
 #include "syscall.h"
+#include <signal.h>
 
 /* ref: https://stackoverflow.com/questions/7218220/c-u32-type-header */
 
@@ -17,4 +18,12 @@ int io_uring_setup(__u32 entry, struct io_uring_params *p)
 {
         int fd = syscall(425, entry, p);
         return fd;
+}
+
+int io_uring_enter(unsigned int fd, unsigned int to_submit,
+                        unsigned int min_complete, unsigned int flags,
+                        sigset_t *sig)
+{
+        int ret = syscall(426, fd, to_submit, min_complete, flags, sig);
+        return ret;
 }
