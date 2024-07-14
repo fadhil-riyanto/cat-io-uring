@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include "cat_io_uring.h"
 #include "syscall.h"
@@ -210,7 +211,18 @@ static off_t get_file_size(int fd)
                 perror("fstat");
                 return -1;
         }
-        return st.st_size;
+
+        if (S_ISBLK(st.st_mode)) {
+                unsigned long long bytes;
+                if (ioctl(fd,  BLKGETSIZE64, &bytes)) {
+                        perror("ioctl");
+                        return -1;
+                }
+                return bytes;    
+        } if (S_ISREG(st.st_mode)) {
+                return st.st_size;
+        }
+        
 }
 
 static void __direct_write_test(int fd, struct iovec *iovecs, int blksize)
