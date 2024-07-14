@@ -14,6 +14,12 @@
 #include "syscall.h"
 
 #define MEMBLK_SIZE 1024
+#define DEBUG_ENABLE 0
+#define print_debug(...) {              \
+        if (DEBUG_ENABLE)               \
+                printf(__VA_ARGS__);    \
+                                        \
+}                                       \
 
 #define QUEUE_DEPTH 1 /* must be power of 2 */
 struct cleanup_addr cleanup_addr;
@@ -164,7 +170,7 @@ static int init_io_uring(submitter_t *submitter)
         iofd = (int)ret;
         submitter->ring_fd = ret;
 
-        printf("io_uring fd: %d", ret);
+        print_debug("io_uring fd: %d", ret);
 
         // calculate sqe, cqe from buildin struct
 
@@ -180,7 +186,7 @@ static int init_io_uring(submitter_t *submitter)
         // printf("done");
 
         if (io_params.features & IORING_FEAT_SINGLE_MMAP) {
-                printf("IORING_FEAT_SINGLE_MMAP is set\n");
+                print_debug("IORING_FEAT_SINGLE_MMAP is set\n");
                 if (cqe_ring_size > sqe_ring_size) 
                         sqe_ring_size = cqe_ring_size;
 
@@ -274,7 +280,7 @@ static int submit_sq(char *filename, submitter_t *submitter)
                 
                 iovecs[i].iov_base = buf;
                 iovecs[i].iov_len = need_read;
-                printf("block %llu\n", (unsigned long long)need_read);
+                print_debug("block %llu\n", (unsigned long long)need_read);
 
                 remaining_bytes = remaining_bytes - need_read;
                 i++;
@@ -388,6 +394,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "ups, usage: <filename>\n");
                 return 1;
         }
+
+        print_debug("start\n");
 
         __main(argv[1]);
         return 3;
