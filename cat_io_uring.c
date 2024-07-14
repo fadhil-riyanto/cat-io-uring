@@ -18,6 +18,10 @@
 #define QUEUE_DEPTH 1 /* must be power of 2 */
 struct cleanup_addr cleanup_addr;
 
+/* https://preshing.com/20120625/memory-ordering-at-compile-time/ */
+#define read_barrier()  __asm__ __volatile__("":::"memory")
+#define write_barrier() __asm__ __volatile__("":::"memory")
+
 static void cleanup()
 {
         for(int i = 0; i < cleanup_addr.iovecs_size; i++)
@@ -200,6 +204,12 @@ static int submit_sq(char *filename, submitter_t *submitter)
         short ret;
         int fd, blocks;
         struct iovec *iovecs;
+        struct io_uring_sqe *sqe = 0;
+        /* iouring purpose */
+
+        int tail, next_tail, index = 0;
+
+        struct app_io_uring_sqe_ring *sring = &submitter->app_io_uring_sqe_ring;
 
         fd = open(filename, O_RDONLY);
         if (fd < 0) {
@@ -251,7 +261,40 @@ static int submit_sq(char *filename, submitter_t *submitter)
         cleanup_addr.iovecs = &iovecs;
         cleanup_addr.iovec = iovecs;
         cleanup_addr.iovecs_size = blocks;
-        
+
+        next_tail = tail = *sring->tail;
+        next_tail++;
+        read_barrier();
+
+        // explanation: byte_masking.c
+        index = tail & *sring->ring_mask;
+        sqe = &submitter->sqe_ring[index];
+
+        sqe->fd = fd;
+        sqe->flags = 0;
+
+        /* opcode list: https://github.com/fadhil-riyanto/linux/blob/3db27e1fdd80c0305dbd0b778ec5d5a12ae187b7/include/uapi/linux/io_uring.h#L204 */
+        sqe->opcode = IORING_OP_READV;
+        sqe->addr = (unsigned long) iovecs;
+        sqe->len = blocks;
+        sqe->off = 0;
+        sqe->user_data = (unsigned long) iovecs;
+
+        sring->array[index] = index;
+        tail = next_tail; /* increment current insertion */
+
+        if (*sring->tail != tail) { /* compare updated tail */
+                *sring->tail = tail;
+                write_barrier();
+        }
+
+        // call syscall
+        ret = io_uring_enter(submitter->ring_fd, 1, 1, IORING_ENTER_GETEVENTS, NULL);
+        if (ret < 0) {
+                perror("io_uring_enter");
+                return -1;
+        }
+
         return 0;
 }
 
@@ -268,7 +311,7 @@ static int __main(char *filename)
 
         memset(submit, 0, sizeof(struct submitter));
 
-        // init_io_uring(submit);
+        init_io_uring(submit);
         submit_sq(filename, submit);
 
         cleanup();
