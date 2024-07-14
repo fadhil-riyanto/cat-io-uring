@@ -1,5 +1,5 @@
-CFLAGS = -g -O0 -fsanitize=address
-
+CFLAGS = -g -O0 
+CXXFLAGS = -Wall -g -fsanitize=address
 
 clean:
 	rm *.o
