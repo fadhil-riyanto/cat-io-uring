@@ -57,6 +57,7 @@ struct cleanup_addr {
 	struct iovec **iovecs; // iovecs arr
 	struct iovec *iovecs_alt; // iovecs arr
 	struct iovec *iovec; // iovecs head addr
+	struct iovec_prop *iovec_prop;
 	int iovecs_size;
 };
 

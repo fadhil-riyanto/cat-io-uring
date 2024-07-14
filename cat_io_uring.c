@@ -34,6 +34,7 @@ static void cleanup()
         for(int i = 0; i < cleanup_addr.iovecs_size; i++)
                 // free(cleanup_addr.iovecs[i]->iov_base);
                 free((cleanup_addr.iovecs_alt + i)->iov_base);
+        free(cleanup_addr.iovec_prop);
         free(cleanup_addr.iovec);
 }
 
@@ -309,6 +310,7 @@ static int submit_sq(char *filename, submitter_t *submitter)
         struct iovec_prop *iv_prop = malloc((sizeof(struct iovec) * blocks) + sizeof(int));
         iv_prop->iovecs = iovecs;
         iv_prop->iovecs_size = blocks;
+        cleanup_addr.iovec_prop = iv_prop;
 
         next_tail = tail = *sring->tail;
         next_tail++;
