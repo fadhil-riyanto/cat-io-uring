@@ -26,7 +26,7 @@ static void cleanup()
 {
         for(int i = 0; i < cleanup_addr.iovecs_size; i++)
                 // free(cleanup_addr.iovecs[i]->iov_base);
-                free((*cleanup_addr.iovecs + i)->iov_base);
+                free((cleanup_addr.iovecs_alt + i)->iov_base);
         free(cleanup_addr.iovec);
 }
 
@@ -216,6 +216,12 @@ static void __direct_write_test(int fd, struct iovec *iovecs, int blksize)
                 write(1, iovecs[i].iov_base, iovecs[i].iov_len);
 }
 
+static void show_data(struct iovec *iovecs, int blksize)
+{
+        for(int i = 0; i < blksize; i++) 
+                write(1, iovecs[i].iov_base, iovecs[i].iov_len);
+}
+
 static int submit_sq(char *filename, submitter_t *submitter) 
 {
         void *ptr;
@@ -274,9 +280,10 @@ static int submit_sq(char *filename, submitter_t *submitter)
                 i++;
         }
 
-        __direct_write_test(fd, iovecs, blocks);
+        // __direct_write_test(fd, iovecs, blocks);
 
         cleanup_addr.iovecs = &iovecs;
+        cleanup_addr.iovecs_alt = iovecs;
         cleanup_addr.iovec = iovecs;
         cleanup_addr.iovecs_size = blocks;
 
@@ -323,7 +330,7 @@ static int submit_sq(char *filename, submitter_t *submitter)
 
 static int read_cq(submitter_t *submitter)
 {
-        struct iovec *iovecs;
+        // struct iovec *iovecs;
         struct iovec_prop *iovec_prop;
         struct app_io_uring_cqe_ring *cring = &submitter->app_io_uring_cqe_ring;
         struct io_uring_cqe *cqe;
@@ -343,10 +350,14 @@ static int read_cq(submitter_t *submitter)
                 cqe = (struct io_uring_cqe*)&cring->cqes[index];
                 iovec_prop = (struct iovec_prop*) cqe->user_data;
 
+                show_data(iovec_prop->iovecs, iovec_prop->iovecs_size);
+
                 head++;
         } while(1);
         return 0;
 }
+
+void dummy() {}
 
 
 static int __main(char *filename) 
@@ -363,6 +374,7 @@ static int __main(char *filename)
         init_io_uring(submit);
         submit_sq(filename, submit);
         read_cq(submit);
+        dummy();
 
         cleanup();
         free(submit);

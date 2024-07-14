@@ -55,6 +55,7 @@ struct cleanup_addr {
 	* cleaning the child buf
 	*/
 	struct iovec **iovecs; // iovecs arr
+	struct iovec *iovecs_alt; // iovecs arr
 	struct iovec *iovec; // iovecs head addr
 	int iovecs_size;
 };
