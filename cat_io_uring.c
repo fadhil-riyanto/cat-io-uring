@@ -242,7 +242,7 @@ static int __main(char *filename)
 
         memset(submit, 0, sizeof(struct submitter));
 
-        init_io_uring(submit);
+        // init_io_uring(submit);
         submit_sq(filename, submit);
         return 0;
 }
